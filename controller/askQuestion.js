@@ -1,18 +1,27 @@
 const path = require("path");
 const fs = require("fs");
+const dotenv = require("dotenv").config();
 const { processPDFAndAnswer } = require('../utils/openai');
 const { OpenAIEmbeddings } = require('@langchain/openai');
 const { PDFLoader } = require('@langchain/community/document_loaders/fs/pdf');
 const { HNSWLib } = require('@langchain/community/vectorstores/hnswlib');
 const { CharacterTextSplitter } = require('langchain/text_splitter');
+const { processPDFAndAnswerGemini } = require("../utils/gemini");
 
 const uploadsDir = path.join(__dirname, '../uploads/.tmp');
 const vectorDir = path.join(__dirname, '../vector_db');
+
+const gpt_secret_code = process.env.GPT_SECRET_CODE;
 
 module.exports.uploadFile = async (req, res) => {
   try {
     const file = req.file;
     const sessionId = req.sessionId;
+    const { secret_code } = req?.body
+
+    if (secret_code && secret_code !== gpt_secret_code) {
+      return res.status(200).send({ status: false, message: "Secret code not match." })
+    }
 
     const loader = new PDFLoader(file.path);
     const docs = await loader.loadAndSplit(
@@ -31,22 +40,30 @@ module.exports.uploadFile = async (req, res) => {
 
 module.exports.handleAskPDFQuestion = async (req, res) => {
   try {
-    const { session_id, question } = req?.body;
+    const { session_id, question, platform } = req?.body;
 
     const vectorPath = path.join(vectorDir, session_id);
 
     if (!fs.existsSync(vectorPath)) {
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+      if (fs.existsSync(vectorPath)) fs.rmSync(vectorPath, { recursive: true });
       return res.status(200).send({ status: false, message: "Invalid session or expired session." });
     }
 
-    const { answer, sources } = await processPDFAndAnswer(vectorPath, question);
+    let result;
 
-    if (answer) {
+    if (platform === 'gemini') {
+      result = await processPDFAndAnswerGemini(vectorPath, question, HNSWLib);
+    } else {
+      result = await processPDFAndAnswer(vectorPath, question);
+    }
+
+    if (result.answer) {
       return res.status(200).send({
         status: true,
         data: {
-          answer,
-          sources
+          answer: result.answer,
+          sources: result.sources
         },
         message: "Answer found successfully."
       });
