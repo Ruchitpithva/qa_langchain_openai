@@ -15,7 +15,7 @@
     "@langchain/openai": "^0.5.18",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.0",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
     "fs-extra": "^11.3.0",
     "hnswlib-node": "^3.0.0",
@@ -23,7 +23,7 @@
     "lodash": "^4.17.21",
     "multer": "^2.0.1",
     "nodemon": "^3.1.10",
-    "openai": "^5.9.0",
+    "openai": "^4.29.0",
     "pdf-parse": "^1.1.1",
     "uuid": "^11.1.0"
   }
