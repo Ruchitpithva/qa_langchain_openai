@@ -20,6 +20,8 @@ module.exports.uploadFile = async (req, res) => {
     const { secret_code } = req?.body
 
     if (secret_code && secret_code !== gpt_secret_code) {
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+      if (fs.existsSync(vectorPath)) fs.rmSync(vectorPath, { recursive: true });
       return res.status(200).send({ status: false, message: "Secret code not match." })
     }
 
